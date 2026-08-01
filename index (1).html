@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARENA</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="icon" href="./icon-192.png">
+<meta name="theme-color" content="#0A0D13">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ARENA">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#0A0D13; --surface:#12161F; --surface-2:#1A2029; --line:#232B38;
+  --gold:#F2B705; --gold-dim:#7A5F0F; --magenta:#FF3D68; --teal:#17D7C4;
+  --text:#E9ECF2; --text-dim:#8B94A5; --text-faint:#57606F; --radius:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:radial-gradient(ellipse at top,#10141C 0%,#0A0D13 60%);font-family:'IBM Plex Sans Arabic',sans-serif;color:var(--text);display:flex;justify-content:center;padding:24px 0;min-height:100vh;}
+.phone{width:390px;max-width:100vw;height:812px;max-height:100vh;background:var(--bg);border-radius:40px;border:8px solid #06070A;box-shadow:0 30px 80px rgba(0,0,0,.6),inset 0 0 0 1px #1c212b;overflow:hidden;position:relative;display:flex;flex-direction:column;}
+.notch{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:120px;height:22px;background:#06070A;border-radius:12px;z-index:50;}
+.topbar{padding:34px 18px 10px 18px;display:flex;align-items:center;justify-content:space-between;}
+.brand{display:flex;align-items:center;gap:8px;}
+.brand .mark{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--gold),#C98A02);display:flex;align-items:center;justify-content:center;font-family:'Rajdhani';font-weight:700;color:#0A0D13;font-size:15px;}
+.brand .word{font-family:'Rajdhani';font-weight:700;font-size:19px;letter-spacing:.5px;}
+.screen{flex:1;overflow-y:auto;padding:6px 18px 90px 18px;scrollbar-width:none;}
+.screen::-webkit-scrollbar{display:none;}
+.page-title{font-family:'Rajdhani';font-weight:700;font-size:22px;margin:4px 0 2px 0;}
+.page-sub{font-size:12px;color:var(--text-dim);margin-bottom:10px;}
+.eyebrow{font-family:'JetBrains Mono';font-size:10.5px;letter-spacing:1.5px;color:var(--text-faint);text-transform:uppercase;display:flex;align-items:center;gap:8px;margin:16px 0 8px 0;}
+.eyebrow::after{content:'';flex:1;height:1px;background:var(--line);}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:12px;}
+input,select{width:100%;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:11px 12px;color:var(--text);font-family:'IBM Plex Sans Arabic';font-size:13.5px;margin-bottom:9px;}
+input::placeholder{color:var(--text-faint);}
+.btn{width:100%;padding:13px;border:none;border-radius:12px;font-family:'Rajdhani';font-weight:700;font-size:15px;cursor:pointer;}
+.btn.gold{background:var(--gold);color:#0A0D13;}
+.btn.ghost{background:var(--surface-2);color:var(--text-dim);border:1px solid var(--line);}
+.btn.blocked{background:var(--surface-2);color:var(--text-faint);}
+.btn.sm{padding:8px;font-size:12.5px;width:auto;}
+.btn[disabled]{opacity:.55;cursor:not-allowed;}
+.squad-slot{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px;margin-bottom:9px;display:flex;align-items:center;gap:11px;}
+.squad-slot.empty{border-style:dashed;color:var(--text-faint);justify-content:center;}
+.avatar-sm{width:36px;height:36px;border-radius:9px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-family:'Rajdhani';font-weight:700;font-size:13px;flex-shrink:0;}
+.slot-info{flex:1;}
+.slot-name{font-size:13.5px;font-weight:600;}
+.slot-sub{font-size:10.5px;color:var(--text-dim);font-family:'JetBrains Mono';margin-top:2px;}
+.role-tag{font-size:9.5px;font-family:'JetBrains Mono';background:var(--surface-2);padding:3px 8px;border-radius:6px;color:var(--text-dim);}
+.progress-track{height:5px;background:var(--surface-2);border-radius:4px;overflow:hidden;margin:12px 0 4px 0;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--teal),var(--gold));transition:width .3s;}
+.t-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:12px;cursor:pointer;}
+.t-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
+.t-name{font-family:'Rajdhani';font-weight:700;font-size:16px;}
+.status-chip{font-family:'JetBrains Mono';font-size:9.5px;padding:4px 9px;border-radius:20px;white-space:nowrap;}
+.status-chip.open{background:rgba(23,215,196,.15);color:var(--teal);}
+.status-chip.registered{background:rgba(242,183,5,.15);color:var(--gold);}
+.t-meta{font-size:12px;color:var(--text-dim);}
+.chat-wrap{display:flex;flex-direction:column;gap:9px;}
+.msg{max-width:78%;padding:9px 12px;border-radius:12px;font-size:13px;line-height:1.5;}
+.msg.in{background:var(--surface);align-self:flex-start;border:1px solid var(--line);}
+.msg.out{background:linear-gradient(135deg,#3a2a08,#22190a);align-self:flex-end;border:1px solid var(--gold-dim);}
+.msg .sender{font-size:10px;color:var(--gold);font-family:'JetBrains Mono';margin-bottom:3px;display:block;}
+.chat-input-row{position:absolute;bottom:74px;right:0;left:0;padding:10px 14px;background:var(--bg);border-top:1px solid var(--line);display:flex;gap:8px;}
+.chat-input-row input{margin-bottom:0;}
+.bottom-nav{position:absolute;bottom:0;right:0;left:0;height:74px;background:rgba(18,22,31,.92);backdrop-filter:blur(10px);border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-around;padding-bottom:10px;}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--text-faint);cursor:pointer;font-size:9.5px;font-family:'JetBrains Mono';}
+.nav-item.active{color:var(--gold);}
+.hidden{display:none !important;}
+.note{font-size:11px;color:var(--text-faint);margin-bottom:10px;line-height:1.6;}
+.err{font-size:12px;color:var(--magenta);margin-bottom:8px;}
+.code-badge{font-family:'JetBrains Mono';background:var(--surface-2);padding:6px 10px;border-radius:8px;font-size:12px;color:var(--gold);display:inline-block;}
+.spinner{text-align:center;color:var(--text-faint);font-family:'JetBrains Mono';font-size:12px;padding:20px 0;}
+.ad-banner{border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;background:linear-gradient(120deg,#201607,#16110A 60%);border:1px solid var(--gold-dim);display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.ad-banner .txt small{display:block;color:var(--text-faint);font-family:'JetBrains Mono';font-size:9px;letter-spacing:1px;margin-bottom:3px;}
+.ad-banner .txt strong{font-family:'Rajdhani';font-size:15px;font-weight:600;}
+.rank-row{display:flex;align-items:center;gap:11px;padding:10px 4px;border-bottom:1px solid var(--line);}
+.rank-pos{font-family:'Rajdhani';font-weight:700;font-size:15px;width:20px;color:var(--text-dim);}
+.rank-pos.top{color:var(--gold);}
+.rank-team-name{font-size:13px;font-weight:600;flex:1;}
+.rank-points{font-family:'JetBrains Mono';font-size:12.5px;font-weight:600;}
+.adjust-btns{display:flex;gap:4px;margin-inline-start:8px;}
+.adjust-btns button{background:var(--surface-2);border:1px solid var(--line);color:var(--text-dim);width:24px;height:24px;border-radius:6px;font-size:13px;cursor:pointer;}
+.back-link{margin-top:6px;cursor:pointer;color:var(--text-dim);font-size:13px;display:inline-block;}
+.pts-row{display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid var(--line);font-size:12.5px;}
+.pts-row .nm{flex:1;font-weight:600;}
+.toggle-form{margin-top:6px;}
+.badge-chip{background:var(--surface-2);border:1px solid var(--gold-dim);border-radius:10px;padding:8px 10px;font-size:11.5px;display:flex;align-items:center;gap:6px;}
+.stars{display:flex;gap:4px;justify-content:center;margin:8px 0;}
+.stars span{font-size:22px;cursor:pointer;color:var(--text-faint);}
+.stars span.on{color:var(--gold);}
+.pred-btn{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:9px;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center;font-size:13px;cursor:pointer;}
+.pred-btn.chosen{border-color:var(--teal);color:var(--teal);}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="notch"></div>
+  <div class="topbar">
+    <div class="brand"><div class="mark">A</div><div class="word">ARENA</div></div>
+    <div id="profile-chip" onclick="go('profile')" style="font-family:'JetBrains Mono';font-size:11px;color:var(--gold);cursor:pointer;"></div>
+  </div>
+
+  <!-- ONBOARD -->
+  <div id="screen-onboard" class="screen">
+    <div class="page-title">مرحبا بيك 👋</div>
+    <div class="page-sub">أدخل معلوماتك باش تبدا</div>
+    <div class="card">
+      <div id="ob-err" class="err hidden"></div>
+      <input id="ob-name" placeholder="اسمك الكامل">
+      <input id="ob-ign" placeholder="اسمك داخل اللعبة (IGN)">
+      <input id="ob-id" placeholder="Player ID">
+      <button class="btn gold" id="ob-btn" onclick="createProfile()">إنشاء حسابي</button>
+    </div>
+  </div>
+
+  <!-- HOME -->
+  <div id="screen-home" class="screen hidden">
+    <div class="page-title">فريقي</div>
+    <div id="ad-banner-home"></div>
+    <div id="no-team-block">
+      <div class="page-sub">ما عندكش فريق بعد</div>
+      <div class="card">
+        <input id="team-name" placeholder="اسم الفريق الجديد">
+        <button class="btn gold" onclick="createTeam()">إنشاء فريق (تصير كابتن)</button>
+      </div>
+      <div class="card">
+        <div id="join-err" class="err hidden"></div>
+        <input id="join-code" placeholder="أدخل كود الفريق للانضمام">
+        <button class="btn ghost" onclick="joinTeam()">الانضمام لفريق</button>
+      </div>
+
+      <div class="eyebrow">أبحث عن فريق</div>
+      <div class="card">
+        <input id="lft-msg" placeholder="مثلاً: قناص، متوفر مساءً">
+        <button class="btn ghost" onclick="postLookingForTeam()">انشر إعلان "نبحث عن فريق"</button>
+      </div>
+      <div id="lft-list"></div>
+    </div>
+    <div id="has-team-block" class="hidden">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div class="t-name" id="team-name-display"></div>
+          <div class="code-badge" id="team-code-display"></div>
+        </div>
+        <div class="note" style="margin:6px 0 0 0;">شارك هذا الكود مع رفقاء فريقك باش ينضموا</div>
+      </div>
+      <div class="eyebrow" id="squad-progress-label">السكواد</div>
+      <div id="squad-list"></div>
+      <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <!-- TOURNAMENTS LIST -->
+  <div id="screen-tournaments" class="screen hidden">
+    <div class="page-title">البطولات</div>
+    <div class="page-sub">سجل فريقك — يتطلب سكواد كامل (4/4). تقدر تتابع كل البطولات والنتائج حتى بلا فريق (وضعية متفرج).</div>
+    <button class="btn ghost" onclick="toggleCreateForm()">+ إنشاء بطولة جديدة</button>
+    <div id="create-t-form" class="card toggle-form hidden">
+      <input id="ct-name" placeholder="اسم البطولة">
+      <select id="ct-mode"><option value="battle_royale">Battle Royale</option><option value="clash_squad">Clash Squad</option></select>
+      <input id="ct-prize" placeholder="الجائزة (مثلاً 50,000 DZD)">
+      <input id="ct-rules" placeholder="قوانين مختصرة (اختياري)">
+      <button class="btn gold" onclick="createTournament()">إنشاء</button>
+    </div>
+    <div class="eyebrow">القائمة</div>
+    <div id="tournament-list"><div class="spinner">تحميل...</div></div>
+  </div>
+
+  <!-- TOURNAMENT POINTS / STANDINGS -->
+  <div id="screen-t-points" class="screen hidden">
+    <div class="back-link" onclick="go('tournaments')">‹ رجوع للبطولات</div>
+    <div class="page-title" id="tp-title">—</div>
+    <div class="page-sub">جدول التنقيط — الفرق المسجلة</div>
+    <div id="tp-rules" class="note hidden"></div>
+    <div id="tp-list"></div>
+    <div class="eyebrow">توقعك لهاذي البطولة</div>
+    <div id="tp-prediction"></div>
+    <div class="note">النقاط = نقاط المركز + نقاط القتل، تُحدَّث يدوياً بعد كل جولة من قبل منظم البطولة.</div>
+  </div>
+
+  <!-- GLOBAL RANKINGS -->
+  <div id="screen-rank" class="screen hidden">
+    <div class="page-title">الترتيب العالمي</div>
+    <div class="page-sub">نظام نقاط تراكمي (Elo) — لكل الفرق</div>
+    <div id="rank-list"><div class="spinner">تحميل...</div></div>
+  </div>
+
+  <!-- CHAT -->
+  <div id="screen-chat" class="screen hidden" style="padding-bottom:150px;">
+    <div class="page-title">الشات</div>
+    <div style="display:flex;gap:8px;margin-bottom:10px;">
+      <div class="btn sm ghost" id="chat-tab-team" onclick="switchChatTab('team')" style="flex:1;text-align:center;">فريقي</div>
+      <div class="btn sm ghost" id="chat-tab-community" onclick="switchChatTab('community')" style="flex:1;text-align:center;">عام</div>
+    </div>
+    <div class="page-sub" id="chat-team-label">—</div>
+    <div class="chat-wrap" id="chat-messages"></div>
+  </div>
+  <div id="chat-input-row" class="chat-input-row hidden">
+    <input id="chat-input" placeholder="اكتب رسالة...">
+    <button class="btn gold" style="width:70px;" onclick="sendMessage()">إرسال</button>
+  </div>
+
+  <!-- ADS -->
+  <div id="screen-ads" class="screen hidden" style="padding-bottom:110px;">
+    <div class="page-title">الإعلانات</div>
+    <div class="page-sub">عرّف بمتجرك أو تطبيقك لكل مستخدمي ARENA</div>
+    <div id="ads-list"></div>
+    <div class="eyebrow">أضف إعلانك</div>
+    <div class="card">
+      <input id="ad-business" placeholder="اسم المتجر / الشركة">
+      <input id="ad-text" placeholder="نص الإعلان (مثلاً: خصم 20%...)">
+      <select id="ad-media-type">
+        <option value="none">بلا صورة/فيديو (نص فقط)</option>
+        <option value="image">صورة</option>
+        <option value="video">فيديو</option>
+      </select>
+      <input id="ad-media-url" placeholder="رابط الصورة أو الفيديو (اختياري)">
+      <input id="ad-url" placeholder="رابط المتجر (اختياري)">
+      <button class="btn gold" onclick="submitAd()">نشر الإعلان</button>
+    </div>
+    <div class="note">هذا نموذج أولي — الدفع الفعلي والمراجعة اليدوية يُضافو لاحقاً.<br>للصورة/الفيديو: ارفعها لموقع مجاني (مثلاً imgur.com أو ibb.co) والصق الرابط المباشر هنا.</div>
+  </div>
+
+  <!-- PROFILE -->
+  <div id="screen-profile" class="screen hidden">
+    <div class="page-title">بروفايلي</div>
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+        <div class="avatar-sm" style="width:50px;height:50px;font-size:19px;" id="pf-avatar"></div>
+        <div><div class="t-name" id="pf-ign">—</div><div class="slot-sub" id="pf-id">—</div></div>
+      </div>
+      <input id="pf-bio" placeholder="نبذة عني (اختياري)">
+      <button class="btn ghost" onclick="saveBio()">حفظ النبذة</button>
+    </div>
+    <div class="eyebrow">إحصائياتي</div>
+    <div class="card">
+      <div class="pts-row"><div class="nm">عدد البطولات المسجل فيها فريقي</div><div id="pf-stat-tournaments">0</div></div>
+      <div class="pts-row"><div class="nm">فريقي الحالي</div><div id="pf-stat-team">—</div></div>
+    </div>
+    <div class="eyebrow">شاراتي</div>
+    <div id="pf-badges" class="card" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+  </div>
+
+  <div class="bottom-nav" id="bottom-nav" style="display:none;">
+    <div class="nav-item active" onclick="go('home')" id="nav-home"><div>⌂</div>فريقي</div>
+    <div class="nav-item" onclick="go('tournaments')" id="nav-tournaments"><div>◫</div>بطولات</div>
+    <div class="nav-item" onclick="go('rank')" id="nav-rank"><div>☰</div>ترتيب</div>
+    <div class="nav-item" onclick="go('chat')" id="nav-chat"><div>◔</div>شات</div>
+    <div class="nav-item" onclick="go('ads')" id="nav-ads"><div>◆</div>إعلانات</div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://nnetfjwldilhikejkitq.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_9D8_eoTwQH_6gvPCeQ5v9g_p4Fwdlj_";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const REQUIRED_SQUAD = 4;
+
+let me = null;
+let myTeam = null;
+let chatChannel = null;
+let communityChannel = null;
+let currentTournamentId = null;
+let chatTab = 'team';
+
+function showErr(id,msg){ const el=document.getElementById(id); el.innerText=msg; el.classList.remove('hidden'); }
+function clearErr(id){ document.getElementById(id).classList.add('hidden'); }
+function genCode(){ return Math.random().toString(36).substring(2,7).toUpperCase(); }
+
+async function createProfile(){
+  clearErr('ob-err');
+  const full_name=document.getElementById('ob-name').value.trim();
+  const ign=document.getElementById('ob-ign').value.trim();
+  const player_id=document.getElementById('ob-id').value.trim();
+  if(!full_name||!ign||!player_id){ showErr('ob-err','عمر جميع الخانات'); return; }
+  document.getElementById('ob-btn').disabled=true;
+  const { data, error } = await sb.from('profiles').insert({full_name,ign,player_id}).select().single();
+  document.getElementById('ob-btn').disabled=false;
+  if(error){ showErr('ob-err','خطأ: '+error.message); return; }
+  me=data;
+  localStorage.setItem('arena_profile_id', me.id);
+  document.getElementById('profile-chip').innerText=me.ign;
+  document.getElementById('bottom-nav').style.display='flex';
+  await checkExistingTeam();
+  go('home');
+}
+
+async function awardBadge(profileId, code){
+  try{ await sb.from('profile_badges').insert({profile_id: profileId, badge_code: code}); }
+  catch(e){ /* شارة موجودة بالفعل، تجاهل */ }
+}
+
+async function createTeam(){
+  const name=document.getElementById('team-name').value.trim();
+  if(!name){ alert('دخل اسم الفريق'); return; }
+  const code=genCode();
+  const { data:team, error } = await sb.from('teams').insert({name,code,captain_id:me.id}).select().single();
+  if(error){ alert('خطأ: '+error.message); return; }
+  await sb.from('team_members').insert({team_id:team.id, profile_id:me.id, role:'IGL'});
+  await awardBadge(me.id, 'team_founder');
+  localStorage.setItem('arena_team_id', team.id);
+  await loadTeam(team.id);
+}
+
+async function joinTeam(){
+  clearErr('join-err');
+  const code=document.getElementById('join-code').value.trim().toUpperCase();
+  if(!code) return;
+  const { data:team, error } = await sb.from('teams').select('*').eq('code',code).single();
+  if(error||!team){ showErr('join-err','الكود ماشي صحيح'); return; }
+  const { data:members } = await sb.from('team_members').select('*').eq('team_id',team.id);
+  if(members.length>=REQUIRED_SQUAD){ showErr('join-err','السكواد كامل بالفعل'); return; }
+  if(members.some(m=>m.profile_id===me.id)){ localStorage.setItem('arena_team_id',team.id); await loadTeam(team.id); return; }
+  const { error:joinErr } = await sb.from('team_members').insert({team_id:team.id, profile_id:me.id, role:'Player'});
+  if(joinErr){ showErr('join-err','خطأ: '+joinErr.message); return; }
+  localStorage.setItem('arena_team_id', team.id);
+  await loadTeam(team.id);
+}
+
+async function checkExistingTeam(){
+  const teamId=localStorage.getItem('arena_team_id');
+  if(teamId){ await loadTeam(teamId); } else { renderTeam(); }
+}
+
+async function loadTeam(teamId){
+  const { data:team, error } = await sb.from('teams').select('*').eq('id',teamId).single();
+  if(error||!team){ myTeam=null; renderTeam(); return; }
+  const { data:members } = await sb.from('team_members').select('role, profile_id, profiles(ign, player_id, full_name)').eq('team_id',teamId);
+  myTeam = { ...team, members: members||[] };
+  renderTeam();
+}
+
+function renderTeam(){
+  const noTeam=document.getElementById('no-team-block');
+  const hasTeam=document.getElementById('has-team-block');
+  if(!myTeam){ noTeam.classList.remove('hidden'); hasTeam.classList.add('hidden'); renderLookingForTeam(); return; }
+  noTeam.classList.add('hidden'); hasTeam.classList.remove('hidden');
+  document.getElementById('team-name-display').innerText=myTeam.name;
+  document.getElementById('team-code-display').innerText=myTeam.code;
+  document.getElementById('chat-team-label').innerText=myTeam.name+' — خاص';
+  const list=document.getElementById('squad-list'); list.innerHTML='';
+  for(let i=0;i<REQUIRED_SQUAD;i++){
+    const m=myTeam.members[i];
+    if(m){
+      const ign=m.profiles?m.profiles.ign:'?'; const pid=m.profiles?m.profiles.player_id:'';
+      list.innerHTML+=`<div class="squad-slot"><div class="avatar-sm">${ign.charAt(0).toUpperCase()}</div>
+        <div class="slot-info"><div class="slot-name">${ign}${m.profile_id===myTeam.captain_id?' — كابتن':''}</div><div class="slot-sub">ID: ${pid}</div></div>
+        <div class="role-tag">${m.role}</div></div>`;
+    } else {
+      list.innerHTML+=`<div class="squad-slot empty">+ في انتظار لاعب (شارك الكود)</div>`;
+    }
+  }
+  const pct=Math.round((myTeam.members.length/REQUIRED_SQUAD)*100);
+  document.getElementById('progress-fill').style.width=pct+'%';
+  document.getElementById('squad-progress-label').innerText=`السكواد — ${myTeam.members.length}/${REQUIRED_SQUAD}`;
+}
+
+async function postLookingForTeam(){
+  const message=document.getElementById('lft-msg').value.trim();
+  if(!message){ alert('اكتب رسالة قصيرة'); return; }
+  const { error } = await sb.from('looking_for_team').insert({profile_id:me.id, message});
+  if(error){ alert('خطأ: '+error.message); return; }
+  document.getElementById('lft-msg').value='';
+  renderLookingForTeam();
+}
+
+async function renderLookingForTeam(){
+  const el=document.getElementById('lft-list');
+  if(!el) return;
+  const { data:posts, error } = await sb.from('looking_for_team')
+    .select('id, message, created_at, profiles(ign, player_id)')
+    .eq('status','active').order('created_at',{ascending:false}).limit(15);
+  if(error){ el.innerHTML=''; return; }
+  el.innerHTML = (posts||[]).map(p=>`<div class="squad-slot">
+    <div class="avatar-sm">${p.profiles?p.profiles.ign.charAt(0).toUpperCase():'?'}</div>
+    <div class="slot-info"><div class="slot-name">${p.profiles?p.profiles.ign:'?'}</div><div class="slot-sub">${p.message}</div></div>
+  </div>`).join('') || '<div class="note">ما كاين حتى حد يبحث عن فريق دابا.</div>';
+}
+
+function toggleCreateForm(){ document.getElementById('create-t-form').classList.toggle('hidden'); }
+
+async function createTournament(){
+  const name=document.getElementById('ct-name').value.trim();
+  const game_type=document.getElementById('ct-mode').value;
+  const prize_pool=document.getElementById('ct-prize').value.trim();
+  const rules=document.getElementById('ct-rules').value.trim();
+  if(!name){ alert('دخل اسم البطولة'); return; }
+  const format = game_type==='clash_squad' ? 'knockout_groups' : 'points_accumulation';
+  const { error } = await sb.from('tournaments').insert({name, game_type, format, prize_pool, rules, status:'open'});
+  if(error){ alert('خطأ: '+error.message); return; }
+  document.getElementById('ct-name').value=''; document.getElementById('ct-prize').value=''; document.getElementById('ct-rules').value='';
+  toggleCreateForm();
+  renderTournaments();
+}
+
+async function renderTournaments(){
+  const { data:list, error } = await sb.from('tournaments').select('*').order('created_at');
+  const el=document.getElementById('tournament-list');
+  if(error){ el.innerHTML='<div class="note">تعذر تحميل البطولات: '+error.message+'</div>'; return; }
+  let myRegIds=[];
+  if(myTeam){
+    const { data:regs } = await sb.from('tournament_registrations').select('tournament_id').eq('team_id',myTeam.id);
+    myRegIds=(regs||[]).map(r=>r.tournament_id);
+  }
+  el.innerHTML='';
+  (list||[]).forEach(t=>{
+    const isRegistered=myRegIds.includes(t.id);
+    const squadFull=myTeam && myTeam.members.length>=REQUIRED_SQUAD;
+    const modeLabel=t.game_type==='clash_squad'?'Clash Squad':'Battle Royale';
+    el.innerHTML+=`<div class="t-card">
+      <div onclick="openPoints('${t.id}','${t.name.replace(/'/g,"\\'")}')">
+        <div class="t-card-top"><div class="t-name">${t.name}</div>
+          <div class="status-chip ${isRegistered?'registered':'open'}">${isRegistered?'مسجل ✓':'مفتوح'}</div></div>
+        <div class="t-meta">${modeLabel} · الجائزة: ${t.prize_pool||'-'}</div>
+      </div>
+      <button class="btn ${isRegistered?'ghost':(squadFull?'gold':'blocked')}" style="margin-top:10px;"
+        ${isRegistered||!squadFull?'disabled':''} onclick="event.stopPropagation(); registerTournament('${t.id}')">
+        ${isRegistered?'مسجل بالفعل':(squadFull?'سجل الفريق':'أكمل السكواد أولاً ('+(myTeam?myTeam.members.length:0)+'/'+REQUIRED_SQUAD+')')}
+      </button>
+    </div>`;
+  });
+  if((list||[]).length===0){ el.innerHTML='<div class="note">ما كاين حتى بطولة بعد.</div>'; }
+}
+
+async function registerTournament(tid){
+  if(!myTeam||myTeam.members.length<REQUIRED_SQUAD){ alert('السكواد لازم يكون كامل'); return; }
+  const { error } = await sb.from('tournament_registrations').insert({tournament_id:tid, team_id:myTeam.id});
+  if(error && !error.message.includes('duplicate')){ alert('خطأ: '+error.message); return; }
+  for(const m of myTeam.members){ await awardBadge(m.profile_id, 'first_tournament'); }
+  renderTournaments();
+}
+
+async function openPoints(tid, tname){
+  currentTournamentId=tid;
+  document.getElementById('tp-title').innerText=tname;
+  const { data:t } = await sb.from('tournaments').select('rules').eq('id',tid).single();
+  const rulesEl=document.getElementById('tp-rules');
+  if(t && t.rules){ rulesEl.innerText='📋 قوانين البطولة: '+t.rules; rulesEl.classList.remove('hidden'); }
+  else { rulesEl.classList.add('hidden'); }
+  go('t-points');
+}
+
+async function reportTeam(teamId, teamName){
+  const reason = prompt('اكتب سبب الإبلاغ عن فريق "'+teamName+'":');
+  if(!reason) return;
+  const { error } = await sb.from('reports').insert({reporter_id:me.id, reported_team_id:teamId, reason});
+  if(error){ alert('خطأ: '+error.message); return; }
+  alert('تم إرسال البلاغ، شكراً لك.');
+}
+
+async function renderPoints(){
+  const el=document.getElementById('tp-list');
+  el.innerHTML='<div class="spinner">تحميل...</div>';
+  const { data:regs, error } = await sb.from('tournament_registrations')
+    .select('id, points, kills, team_id, teams(name)')
+    .eq('tournament_id', currentTournamentId)
+    .order('points', {ascending:false});
+  if(error){ el.innerHTML='<div class="note">خطأ: '+error.message+'</div>'; return; }
+  if((regs||[]).length===0){ el.innerHTML='<div class="note">ما كاين حتى فريق مسجل بعد.</div>'; return; }
+  el.innerHTML = regs.map((r,i)=>`<div class="pts-row">
+    <div style="width:18px;color:${i===0?'var(--gold)':'var(--text-dim)'};font-weight:700;">${i+1}</div>
+    <div class="nm">${r.teams?r.teams.name:'?'}</div>
+    <div style="color:var(--text-faint);font-size:11px;">قتل: ${r.kills}</div>
+    <div style="font-weight:700;">${r.points} نقطة</div>
+    <div class="adjust-btns">
+      <button onclick="adjustPoints('${r.id}', ${r.points}, ${r.kills}, 1, 0)">+1نقطة</button>
+      <button onclick="adjustPoints('${r.id}', ${r.points}, ${r.kills}, 0, 1)">+قتل</button>
+      <button onclick="reportTeam('${r.team_id}','${(r.teams?r.teams.name:'').replace(/'/g,"\\'")}')" title="إبلاغ" style="color:var(--magenta);">🚩</button>
+      <button onclick="rateTeam('${r.team_id}','${(r.teams?r.teams.name:'').replace(/'/g,"\\'")}')" title="تقييم" style="color:var(--gold);">⭐</button>
+    </div>
+  </div>`).join('');
+  renderPredictionBox(regs);
+}
+
+async function rateTeam(teamId, teamName){
+  const stars = prompt('قيّم فريق "'+teamName+'" من 1 إلى 5 نجوم:');
+  const n = parseInt(stars);
+  if(!n || n<1 || n>5){ return; }
+  const { error } = await sb.from('team_ratings').upsert(
+    { rater_id: me.id, rated_team_id: teamId, tournament_id: currentTournamentId, stars: n },
+    { onConflict: 'rater_id,rated_team_id,tournament_id' }
+  );
+  if(error){ alert('خطأ: '+error.message); return; }
+  alert('شكراً، تسجل تقييمك ⭐');
+}
+
+async function renderPredictionBox(regs){
+  const el = document.getElementById('tp-prediction');
+  if(!el) return;
+  if((regs||[]).length===0){ el.innerHTML=''; return; }
+  let myPick = null;
+  try{
+    const res = await sb.from('predictions').select('*').eq('profile_id',me.id).eq('tournament_id',currentTournamentId);
+    if(res.data && res.data.length>0) myPick = res.data[0].predicted_team_id;
+  }catch(e){}
+
+  const { data:counts } = await sb.from('predictions').select('predicted_team_id').eq('tournament_id', currentTournamentId);
+  const countMap = {};
+  (counts||[]).forEach(c=>{ countMap[c.predicted_team_id] = (countMap[c.predicted_team_id]||0)+1; });
+
+  el.innerHTML = regs.map(r=>{
+    const chosen = myPick === r.team_id;
+    const cnt = countMap[r.team_id] || 0;
+    return `<div class="pred-btn ${chosen?'chosen':''}" onclick="makePrediction('${r.team_id}')">
+      <span>${r.teams?r.teams.name:'?'}</span><span>${cnt} صوت ${chosen?'✓':''}</span>
+    </div>`;
+  }).join('');
+}
+
+async function makePrediction(teamId){
+  const { error } = await sb.from('predictions').upsert(
+    { profile_id: me.id, tournament_id: currentTournamentId, predicted_team_id: teamId },
+    { onConflict: 'profile_id,tournament_id' }
+  );
+  if(error){ alert('خطأ: '+error.message); return; }
+  renderPoints();
+}
+
+async function adjustPoints(regId, curPoints, curKills, addPts, addKill){
+  const newPoints = curPoints + addPts + addKill; // كل قتل = نقطة واحدة
+  const newKills = curKills + addKill;
+  const { error } = await sb.from('tournament_registrations').update({points:newPoints, kills:newKills}).eq('id', regId);
+  if(error){ alert('خطأ: '+error.message); return; }
+  renderPoints();
+}
+
+async function renderRankings(){
+  const el=document.getElementById('rank-list');
+  const { data:teams, error } = await sb.from('teams').select('*').order('ranking_points',{ascending:false});
+  if(error){ el.innerHTML='<div class="note">خطأ: '+error.message+'</div>'; return; }
+  if((teams||[]).length===0){ el.innerHTML='<div class="note">ما كاين حتى فريق بعد.</div>'; return; }
+  if(teams[0]){
+    const { data:topMembers } = await sb.from('team_members').select('profile_id').eq('team_id', teams[0].id);
+    for(const m of (topMembers||[])){ await awardBadge(m.profile_id, 'top_ranked'); }
+  }
+  el.innerHTML = teams.map((t,i)=>`<div class="rank-row">
+    <div class="rank-pos ${i<3?'top':''}">${i+1}</div>
+    <div class="rank-team-name">${t.name}</div>
+    <div class="rank-points">${t.ranking_points}</div>
+    <div class="adjust-btns">
+      <button onclick="adjustRanking('${t.id}', ${t.ranking_points}, 16)">▲</button>
+      <button onclick="adjustRanking('${t.id}', ${t.ranking_points}, -16)">▼</button>
+    </div>
+  </div>`).join('');
+}
+
+async function adjustRanking(teamId, current, delta){
+  const { error } = await sb.from('teams').update({ranking_points: current+delta}).eq('id', teamId);
+  if(error){ alert('خطأ: '+error.message); return; }
+  renderRankings();
+}
+
+async function sendMessage(){
+  const input=document.getElementById('chat-input');
+  const text=input.value.trim();
+  if(!text) return;
+  input.value='';
+  if(chatTab==='community'){
+    const { error } = await sb.from('community_chat_messages').insert({sender_id:me.id, message:text});
+    if(error){ alert('خطأ: '+error.message); }
+    return;
+  }
+  if(!myTeam) return;
+  const { error } = await sb.from('team_chat_messages').insert({team_id:myTeam.id, sender_id:me.id, message:text});
+  if(error){ alert('خطأ: '+error.message); }
+}
+
+function switchChatTab(tab){
+  chatTab=tab;
+  const teamTabEl=document.getElementById('chat-tab-team'), commTabEl=document.getElementById('chat-tab-community');
+  teamTabEl.classList.toggle('gold', tab==='team'); teamTabEl.classList.toggle('ghost', tab!=='team');
+  commTabEl.classList.toggle('gold', tab==='community'); commTabEl.classList.toggle('ghost', tab!=='community');
+  if(tab==='team'){
+    document.getElementById('chat-team-label').innerText = myTeam ? (myTeam.name+' — خاص') : 'ما عندكش فريق بعد';
+    renderChat(); subscribeToChat();
+    if(communityChannel){ sb.removeChannel(communityChannel); communityChannel=null; }
+  } else {
+    document.getElementById('chat-team-label').innerText = 'قناة عامة — كل لاعبي ARENA';
+    renderCommunityChat(); subscribeToCommunityChat();
+    if(chatChannel){ sb.removeChannel(chatChannel); chatChannel=null; }
+  }
+}
+
+async function renderCommunityChat(){
+  const { data:msgs, error } = await sb.from('community_chat_messages')
+    .select('message, sender_id, sent_at, profiles(ign)').order('sent_at',{ascending:true}).limit(100);
+  const el=document.getElementById('chat-messages');
+  if(error){ el.innerHTML='<div class="note">تعذر تحميل الشات</div>'; return; }
+  el.innerHTML=(msgs||[]).map(m=>{
+    const sender=m.profiles?m.profiles.ign:'?'; const mine=m.sender_id===me.id;
+    return `<div class="msg ${mine?'out':'in'}">${mine?'':'<span class="sender">'+sender+'</span>'}${m.message}</div>`;
+  }).join('');
+  el.scrollTop=el.scrollHeight;
+}
+
+function subscribeToCommunityChat(){
+  if(communityChannel) sb.removeChannel(communityChannel);
+  communityChannel = sb.channel('community-chat')
+    .on('postgres_changes', {event:'INSERT', schema:'public', table:'community_chat_messages'}, ()=>renderCommunityChat())
+    .subscribe();
+}
+
+async function renderChat(){
+  if(!myTeam) return;
+  const { data:msgs, error } = await sb.from('team_chat_messages')
+    .select('message, sender_id, sent_at, profiles(ign)').eq('team_id',myTeam.id).order('sent_at',{ascending:true});
+  const el=document.getElementById('chat-messages');
+  if(error){ el.innerHTML='<div class="note">تعذر تحميل الشات</div>'; return; }
+  el.innerHTML=(msgs||[]).map(m=>{
+    const sender=m.profiles?m.profiles.ign:'?'; const mine=m.sender_id===me.id;
+    return `<div class="msg ${mine?'out':'in'}">${mine?'':'<span class="sender">'+sender+'</span>'}${m.message}</div>`;
+  }).join('');
+  el.scrollTop=el.scrollHeight;
+}
+
+function subscribeToChat(){
+  if(chatChannel) sb.removeChannel(chatChannel);
+  if(!myTeam) return;
+  chatChannel = sb.channel('chat:'+myTeam.id)
+    .on('postgres_changes', {event:'INSERT', schema:'public', table:'team_chat_messages', filter:'team_id=eq.'+myTeam.id}, ()=>renderChat())
+    .subscribe();
+}
+
+function adMediaHtml(a){
+  if(a.media_type==='image' && a.media_url){
+    return `<img src="${a.media_url}" style="width:100%;border-radius:10px;margin-bottom:8px;display:block;max-height:160px;object-fit:cover;" onerror="this.style.display='none'">`;
+  }
+  if(a.media_type==='video' && a.media_url){
+    return `<video src="${a.media_url}" style="width:100%;border-radius:10px;margin-bottom:8px;display:block;max-height:180px;" controls muted playsinline></video>`;
+  }
+  return '';
+}
+
+async function renderAdsList(){
+  const { data:ads, error } = await sb.from('ads').select('*').eq('status','active').order('created_at',{ascending:false});
+  const el=document.getElementById('ads-list');
+  if(error){ el.innerHTML='<div class="note">تعذر التحميل</div>'; return; }
+  el.innerHTML=(ads||[]).map(a=>`<div class="ad-banner" style="flex-direction:column;align-items:stretch;">
+    ${adMediaHtml(a)}
+    <div class="txt"><small>إعلان</small><strong>${a.business_name} — ${a.ad_text}</strong></div>
+  </div>`).join('');
+}
+
+async function renderHomeAdBanner(){
+  const { data:ads } = await sb.from('ads').select('*').eq('status','active').order('created_at',{ascending:false}).limit(1);
+  const el=document.getElementById('ad-banner-home');
+  if(ads && ads.length>0){
+    const a=ads[0];
+    el.innerHTML=`<div class="ad-banner" style="flex-direction:column;align-items:stretch;">
+      ${adMediaHtml(a)}
+      <div class="txt"><small>إعلان مرعي</small><strong>${a.business_name} — ${a.ad_text}</strong></div>
+    </div>`;
+  } else { el.innerHTML=''; }
+}
+
+async function submitAd(){
+  const business_name=document.getElementById('ad-business').value.trim();
+  const ad_text=document.getElementById('ad-text').value.trim();
+  const target_url=document.getElementById('ad-url').value.trim();
+  const media_type=document.getElementById('ad-media-type').value;
+  const media_url=document.getElementById('ad-media-url').value.trim();
+  if(!business_name||!ad_text){ alert('عمر اسم المتجر ونص الإعلان'); return; }
+  const { error } = await sb.from('ads').insert({business_name, ad_text, target_url, media_type, media_url});
+  if(error){ alert('خطأ: '+error.message); return; }
+  document.getElementById('ad-business').value='';
+  document.getElementById('ad-text').value='';
+  document.getElementById('ad-url').value='';
+  document.getElementById('ad-media-url').value='';
+  renderAdsList();
+  renderHomeAdBanner();
+}
+
+function go(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
+  document.getElementById('screen-'+name).classList.remove('hidden');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const navMap={home:'nav-home', tournaments:'nav-tournaments', rank:'nav-rank', chat:'nav-chat', ads:'nav-ads'};
+  if(navMap[name]) document.getElementById(navMap[name]).classList.add('active');
+  document.getElementById('chat-input-row').classList.toggle('hidden', name!=='chat');
+  if(name==='home'){ renderHomeAdBanner(); }
+  if(name==='chat'){ switchChatTab(chatTab); }
+  if(name==='tournaments'){ renderTournaments(); }
+  if(name==='t-points'){ renderPoints(); }
+  if(name==='rank'){ renderRankings(); }
+  if(name==='ads'){ renderAdsList(); }
+  if(name==='profile'){ renderProfile(); }
+}
+
+async function saveBio(){
+  const bio=document.getElementById('pf-bio').value.trim();
+  const { error } = await sb.from('profiles').update({bio}).eq('id', me.id);
+  if(error){ alert('خطأ: '+error.message); return; }
+  me.bio = bio;
+  alert('تم الحفظ');
+}
+
+async function renderProfile(){
+  document.getElementById('pf-avatar').innerText = me.ign.charAt(0).toUpperCase();
+  document.getElementById('pf-ign').innerText = me.ign;
+  document.getElementById('pf-id').innerText = 'ID: '+me.player_id;
+  document.getElementById('pf-bio').value = me.bio || '';
+  document.getElementById('pf-stat-team').innerText = myTeam ? myTeam.name : 'بلا فريق';
+  if(myTeam){
+    const { data:regs } = await sb.from('tournament_registrations').select('id').eq('team_id', myTeam.id);
+    document.getElementById('pf-stat-tournaments').innerText = (regs||[]).length;
+  } else {
+    document.getElementById('pf-stat-tournaments').innerText = '0';
+  }
+  const { data:myBadges } = await sb.from('profile_badges').select('badge_code, badges(label, icon)').eq('profile_id', me.id);
+  const badgesEl = document.getElementById('pf-badges');
+  if(myBadges && myBadges.length>0){
+    badgesEl.innerHTML = myBadges.map(b=>`<div class="badge-chip">${b.badges?b.badges.icon:'🏅'} ${b.badges?b.badges.label:b.badge_code}</div>`).join('');
+  } else {
+    badgesEl.innerHTML = '<div class="note" style="margin:0;">مازال ما كسبتش شارات — سجل فبطولة أو أسس فريق.</div>';
+  }
+}
+
+(async function init(){
+  const profileId=localStorage.getItem('arena_profile_id');
+  if(profileId){
+    const { data:profile } = await sb.from('profiles').select('*').eq('id',profileId).single();
+    if(profile){
+      me=profile;
+      document.getElementById('profile-chip').innerText=me.ign;
+      document.getElementById('bottom-nav').style.display='flex';
+      await checkExistingTeam();
+      go('home');
+      return;
+    }
+  }
+})();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{ navigator.serviceWorker.register('./sw.js').catch(()=>{}); });
+}
+</script>
+</body>
+</html>
