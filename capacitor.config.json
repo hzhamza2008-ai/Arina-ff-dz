@@ -1,0 +1,12 @@
+{
+  "appId": "com.arena.app",
+  "appName": "ARENA",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "android": {
+    "allowMixedContent": true
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}
